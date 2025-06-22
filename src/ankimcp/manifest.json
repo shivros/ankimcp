@@ -1,0 +1,8 @@
+{
+    "name": "AnkiMCP",
+    "package": "ankimcp",
+    "author": "Matthew White",
+    "homepage": "https://ankimcp.com",
+    "min_anki_version": "2.1.54",
+    "max_anki_version": "25"
+}

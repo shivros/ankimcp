@@ -1,0 +1,8 @@
+{
+    "name": "AnkiMCP",
+    "mod": 0,
+    "config": {
+        "host": "localhost",
+        "port": 4473
+    }
+}

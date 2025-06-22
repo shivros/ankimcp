@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ankimcp": {
+      "command": "python",
+      "args": ["-m", "ankimcp"],
+      "env": {
+        "PYTHONPATH": "/home/matt/Workspaces/matt-fff/ankimcp/src"
+      }
+    }
+  }
+}

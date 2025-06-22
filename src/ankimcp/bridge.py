@@ -1,0 +1,173 @@
+"""Bridge to connect Claude Code to the running Anki MCP server."""
+
+import asyncio
+import json
+import sys
+from typing import Any, Dict
+
+import httpx
+from mcp.server import Server, NotificationOptions
+from mcp.server.models import InitializationOptions
+from mcp.types import Tool, TextContent
+
+
+class AnkiMCPBridge:
+    """Bridge between Claude's stdio MCP and Anki's HTTP MCP server."""
+    
+    def __init__(self, host: str = "localhost", port: int = 4473):
+        self.base_url = f"http://{host}:{port}"
+        self.client = httpx.AsyncClient()
+        self.app = Server("ankimcp-bridge")
+        
+        # Register handlers
+        self.app.list_tools()(self.list_tools)
+        self.app.call_tool()(self.call_tool)
+    
+    async def list_tools(self) -> list[Tool]:
+        """Forward tool listing request to Anki server."""
+        try:
+            response = await self.client.get(f"{self.base_url}/tools")
+            response.raise_for_status()
+            tools_data = response.json()
+            
+            # Convert to Tool objects
+            tools = []
+            for tool_data in tools_data:
+                tools.append(Tool(**tool_data))
+            return tools
+        except Exception as e:
+            # Fallback to hardcoded tools if server is not running
+            return [
+                Tool(
+                    name="list_decks",
+                    description="List all available Anki decks",
+                    inputSchema={"type": "object", "properties": {}, "required": []}
+                ),
+                Tool(
+                    name="get_deck_info",
+                    description="Get detailed information about a specific deck",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "deck_name": {
+                                "type": "string",
+                                "description": "Name of the deck to get info for"
+                            }
+                        },
+                        "required": ["deck_name"]
+                    }
+                ),
+                Tool(
+                    name="search_notes",
+                    description="Search for notes using Anki's search syntax",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Anki search query"
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "Maximum number of results",
+                                "default": 50
+                            }
+                        },
+                        "required": ["query"]
+                    }
+                ),
+                Tool(
+                    name="get_note",
+                    description="Get detailed information about a specific note",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "note_id": {
+                                "type": "integer",
+                                "description": "ID of the note to retrieve"
+                            }
+                        },
+                        "required": ["note_id"]
+                    }
+                ),
+                Tool(
+                    name="get_cards_for_note",
+                    description="Get all cards associated with a specific note",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "note_id": {
+                                "type": "integer",
+                                "description": "ID of the note"
+                            }
+                        },
+                        "required": ["note_id"]
+                    }
+                ),
+                Tool(
+                    name="get_review_stats",
+                    description="Get review statistics for a deck or overall",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "deck_name": {
+                                "type": "string",
+                                "description": "Name of the deck (optional)"
+                            }
+                        },
+                        "required": []
+                    }
+                )
+            ]
+    
+    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> list[TextContent]:
+        """Forward tool execution to Anki server."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/tools/{name}",
+                json=arguments
+            )
+            response.raise_for_status()
+            result = response.json()
+            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+        except httpx.ConnectError:
+            return [TextContent(
+                type="text", 
+                text="Error: Cannot connect to Anki MCP server. Make sure Anki is running."
+            )]
+        except Exception as e:
+            return [TextContent(type="text", text=f"Error: {str(e)}")]
+    
+    async def run(self):
+        """Run the bridge server."""
+        from mcp.server.stdio import stdio_server
+        
+        async with stdio_server() as (read_stream, write_stream):
+            await self.app.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name="ankimcp-bridge",
+                    server_version="0.1.0",
+                    capabilities=self.app.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={}
+                    )
+                )
+            )
+    
+    async def __aenter__(self):
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.client.aclose()
+
+
+async def main():
+    """Run the bridge."""
+    bridge = AnkiMCPBridge()
+    await bridge.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

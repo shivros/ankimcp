@@ -1,0 +1,84 @@
+[project]
+name = "ankimcp"
+version = "0.1.0"
+description = "Expose Anki data via Model Context Protocol (MCP)"
+authors = [
+    { name = "Matthew White", email = "mail@matt6f.com" }
+]
+dependencies = [
+    "mcp>=1.9.4",
+    "anki>=25.2.7",
+    "aqt>=25.2.7",
+    "aiohttp>=3.12.13",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pyright>=1.1.402",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "pytest-asyncio>=1.0.0",
+    "black>=25.1.0",
+    "ruff>=0.12.0",
+    "mypy>=1.16.1",
+]
+
+[tool.rye.scripts]
+# Run the mock server for testing
+server = "python -m ankimcp"
+# Run tests
+test = "pytest tests/ -v"
+# Run tests with coverage
+test-cov = "pytest tests/ --cov=ankimcp --cov-report=term-missing"
+# Type checking
+typecheck = "pyright src/"
+# Linting
+lint = "ruff check src/ tests/"
+# Formatting
+format = "black src/ tests/"
+# Format check
+format-check = "black --check src/ tests/"
+# Run all checks
+check = { chain = ["format-check", "lint", "typecheck", "test"] }
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ankimcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]  # Line too long, handled by black
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__"]
+pythonVersion = "3.8"
+typeCheckingMode = "basic"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
