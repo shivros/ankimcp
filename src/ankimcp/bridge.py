@@ -117,6 +117,115 @@ class AnkiMCPBridge:
                         },
                         "required": []
                     }
+                ),
+                Tool(
+                    name="create_deck",
+                    description="Create a new deck",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "deck_name": {
+                                "type": "string",
+                                "description": "Name of the deck to create"
+                            }
+                        },
+                        "required": ["deck_name"]
+                    }
+                ),
+                Tool(
+                    name="create_note_type",
+                    description="Create a new note type (model)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of the note type"
+                            },
+                            "fields": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of field names"
+                            },
+                            "templates": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "qfmt": {"type": "string"},
+                                        "afmt": {"type": "string"}
+                                    }
+                                },
+                                "description": "List of card templates"
+                            }
+                        },
+                        "required": ["name", "fields", "templates"]
+                    }
+                ),
+                Tool(
+                    name="create_note",
+                    description="Create a new note",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "model_name": {
+                                "type": "string",
+                                "description": "Name of the note type (model)"
+                            },
+                            "fields": {
+                                "type": "object",
+                                "description": "Field name to value mapping"
+                            },
+                            "deck_name": {
+                                "type": "string",
+                                "description": "Name of the deck to add the note to"
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Optional list of tags"
+                            }
+                        },
+                        "required": ["model_name", "fields", "deck_name"]
+                    }
+                ),
+                Tool(
+                    name="update_note",
+                    description="Update an existing note",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "note_id": {
+                                "type": "integer",
+                                "description": "ID of the note to update"
+                            },
+                            "fields": {
+                                "type": "object",
+                                "description": "Field name to value mapping (only fields to update)"
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "New list of tags (replaces existing tags)"
+                            }
+                        },
+                        "required": ["note_id"]
+                    }
+                ),
+                Tool(
+                    name="delete_note",
+                    description="Delete a note and all its cards",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "note_id": {
+                                "type": "integer",
+                                "description": "ID of the note to delete"
+                            }
+                        },
+                        "required": ["note_id"]
+                    }
                 )
             ]
     
