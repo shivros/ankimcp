@@ -36,7 +36,7 @@ server = "python -m ankimcp"
 # Run tests
 test = "pytest tests/ -v"
 # Run tests with coverage
-test-cov = "pytest tests/ --cov=ankimcp --cov-report=term-missing"
+test-cov = "pytest tests/ --cov=ankimcp --cov-report=term-missing --cov-report=xml"
 # Type checking
 typecheck = "pyright src/"
 # Linting

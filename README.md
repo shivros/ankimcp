@@ -1,5 +1,11 @@
 # AnkiMCP
 
+[![CI](https://github.com/matt-fff/ankimcp/actions/workflows/ci.yml/badge.svg)](https://github.com/matt-fff/ankimcp/actions/workflows/ci.yml)
+[![Test Matrix](https://github.com/matt-fff/ankimcp/actions/workflows/test-matrix.yml/badge.svg)](https://github.com/matt-fff/ankimcp/actions/workflows/test-matrix.yml)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 Integrate your Anki decks with your choice of AI through the Model Context Protocol (MCP).
 
 AnkiMCP is an Anki addon that exposes your Anki collection data (decks, notes, cards, and review statistics) via an MCP server, allowing AI assistants to help you study, create cards, and analyze your learning progress.

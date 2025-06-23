@@ -1,0 +1,56 @@
+name: Test Matrix
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Exclude some combinations to reduce CI time
+          - os: macos-latest
+            python-version: '3.8'
+          - os: windows-latest
+            python-version: '3.8'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rye
+      uses: eifinger/setup-rye@v4
+      with:
+        enable-cache: true
+        cache-prefix: 'ankimcp-py${{ matrix.python-version }}'
+        
+    - name: Set Python version
+      run: |
+        rye pin ${{ matrix.python-version }}
+        
+    - name: Sync dependencies
+      run: rye sync
+      
+    - name: Run tests
+      run: rye run test
+      
+    - name: Test mock server
+      run: |
+        timeout 10s rye run server || true
+      if: runner.os != 'Windows'
+      
+    - name: Test mock server (Windows)
+      run: |
+        $job = Start-Job { rye run server }
+        Start-Sleep -Seconds 10
+        Stop-Job $job
+      if: runner.os == 'Windows'
