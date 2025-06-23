@@ -1,11 +1,9 @@
 """HTTP MCP server for Anki that can be accessed by a bridge."""
 
-import asyncio
-import json
 import logging
-from typing import Any, Dict, List
 
 from aiohttp import web
+
 from .anki_interface import AnkiInterface
 
 logger = logging.getLogger(__name__)
@@ -13,31 +11,31 @@ logger = logging.getLogger(__name__)
 
 class AnkiMCPHTTPServer:
     """HTTP server that exposes Anki data via MCP-compatible endpoints."""
-    
+
     def __init__(self, anki: AnkiInterface, host: str = "localhost", port: int = 4473):
         self.anki = anki
         self.host = host
         self.port = port
         self.app = web.Application()
         self.setup_routes()
-    
+
     def setup_routes(self):
         """Set up HTTP routes."""
-        self.app.router.add_get('/health', self.health_check)
-        self.app.router.add_get('/tools', self.list_tools)
-        self.app.router.add_post('/tools/{tool_name}', self.call_tool)
-    
+        self.app.router.add_get("/health", self.health_check)
+        self.app.router.add_get("/tools", self.list_tools)
+        self.app.router.add_post("/tools/{tool_name}", self.call_tool)
+
     async def health_check(self, request: web.Request) -> web.Response:
         """Health check endpoint."""
         return web.json_response({"status": "ok", "service": "ankimcp"})
-    
+
     async def list_tools(self, request: web.Request) -> web.Response:
         """List available tools."""
         tools = [
             {
                 "name": "list_decks",
                 "description": "List all available Anki decks",
-                "inputSchema": {"type": "object", "properties": {}, "required": []}
+                "inputSchema": {"type": "object", "properties": {}, "required": []},
             },
             {
                 "name": "get_deck_info",
@@ -47,11 +45,11 @@ class AnkiMCPHTTPServer:
                     "properties": {
                         "deck_name": {
                             "type": "string",
-                            "description": "Name of the deck to get info for"
+                            "description": "Name of the deck to get info for",
                         }
                     },
-                    "required": ["deck_name"]
-                }
+                    "required": ["deck_name"],
+                },
             },
             {
                 "name": "search_notes",
@@ -59,18 +57,15 @@ class AnkiMCPHTTPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "Anki search query"
-                        },
+                        "query": {"type": "string", "description": "Anki search query"},
                         "limit": {
                             "type": "integer",
                             "description": "Maximum number of results",
-                            "default": 50
-                        }
+                            "default": 50,
+                        },
                     },
-                    "required": ["query"]
-                }
+                    "required": ["query"],
+                },
             },
             {
                 "name": "get_note",
@@ -80,11 +75,11 @@ class AnkiMCPHTTPServer:
                     "properties": {
                         "note_id": {
                             "type": "integer",
-                            "description": "ID of the note to retrieve"
+                            "description": "ID of the note to retrieve",
                         }
                     },
-                    "required": ["note_id"]
-                }
+                    "required": ["note_id"],
+                },
             },
             {
                 "name": "get_cards_for_note",
@@ -92,13 +87,10 @@ class AnkiMCPHTTPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "note_id": {
-                            "type": "integer",
-                            "description": "ID of the note"
-                        }
+                        "note_id": {"type": "integer", "description": "ID of the note"}
                     },
-                    "required": ["note_id"]
-                }
+                    "required": ["note_id"],
+                },
             },
             {
                 "name": "get_review_stats",
@@ -108,24 +100,24 @@ class AnkiMCPHTTPServer:
                     "properties": {
                         "deck_name": {
                             "type": "string",
-                            "description": "Name of the deck (optional)"
+                            "description": "Name of the deck (optional)",
                         }
                     },
-                    "required": []
-                }
-            }
+                    "required": [],
+                },
+            },
         ]
         return web.json_response(tools)
-    
+
     async def call_tool(self, request: web.Request) -> web.Response:
         """Execute a tool and return results."""
-        tool_name = request.match_info['tool_name']
-        
+        tool_name = request.match_info["tool_name"]
+
         try:
             data = await request.json()
-        except:
+        except Exception:
             data = {}
-        
+
         try:
             if tool_name == "list_decks":
                 result = await self.anki.list_decks()
@@ -133,8 +125,7 @@ class AnkiMCPHTTPServer:
                 result = await self.anki.get_deck_info(data["deck_name"])
             elif tool_name == "search_notes":
                 result = await self.anki.search_notes(
-                    data["query"],
-                    limit=data.get("limit", 50)
+                    data["query"], limit=data.get("limit", 50)
                 )
             elif tool_name == "get_note":
                 result = await self.anki.get_note(data["note_id"])
@@ -144,19 +135,15 @@ class AnkiMCPHTTPServer:
                 result = await self.anki.get_review_stats(data.get("deck_name"))
             else:
                 return web.json_response(
-                    {"error": f"Unknown tool: {tool_name}"},
-                    status=404
+                    {"error": f"Unknown tool: {tool_name}"}, status=404
                 )
-            
+
             return web.json_response(result)
-            
+
         except Exception as e:
             logger.error(f"Error executing tool {tool_name}: {e}")
-            return web.json_response(
-                {"error": str(e)},
-                status=500
-            )
-    
+            return web.json_response({"error": str(e)}, status=500)
+
     async def start(self):
         """Start the HTTP server."""
         runner = web.AppRunner(self.app)

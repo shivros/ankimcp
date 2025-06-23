@@ -2,7 +2,6 @@
 
 import logging
 import subprocess
-import sys
 import threading
 from pathlib import Path
 from typing import Optional
@@ -41,18 +40,18 @@ def start_mcp_server():
         # Start the server directly in this process
         from .anki_interface import AnkiInterface
         from .simple_http_server import SimpleHTTPServer
-        
+
         # Create Anki interface
         anki_interface = AnkiInterface(mw.col)
-        
+
         # Create and start HTTP server
         http_server = SimpleHTTPServer(anki_interface, host, port)
         http_server.start()
-        
+
         # Store the server in the addon manager's config
         # so we can stop it later
-        if not hasattr(mw.addonManager, '_ankimcp_server'):
-            mw.addonManager._ankimcp_server = http_server
+        if not hasattr(mw.addonManager, "_ankimcp_server"):
+            setattr(mw.addonManager, "_ankimcp_server", http_server)
 
         logger.info(f"MCP server started on {host}:{port}")
         showInfo(f"AnkiMCP server started on {host}:{port}")
@@ -70,11 +69,11 @@ def stop_mcp_server():
     """Stop the MCP server."""
     try:
         from aqt import mw
-        
-        if hasattr(mw.addonManager, '_ankimcp_server'):
-            server = mw.addonManager._ankimcp_server
+
+        if hasattr(mw.addonManager, "_ankimcp_server"):
+            server = getattr(mw.addonManager, "_ankimcp_server")
             server.stop()
-            delattr(mw.addonManager, '_ankimcp_server')
+            delattr(mw.addonManager, "_ankimcp_server")
             logger.info("MCP server stopped")
     except Exception as e:
         logger.error(f"Error stopping server: {e}")

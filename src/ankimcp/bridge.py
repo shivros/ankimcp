@@ -2,46 +2,45 @@
 
 import asyncio
 import json
-import sys
 from typing import Any, Dict
 
 import httpx
-from mcp.server import Server, NotificationOptions
+from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
-from mcp.types import Tool, TextContent
+from mcp.types import TextContent, Tool
 
 
 class AnkiMCPBridge:
     """Bridge between Claude's stdio MCP and Anki's HTTP MCP server."""
-    
+
     def __init__(self, host: str = "localhost", port: int = 4473):
         self.base_url = f"http://{host}:{port}"
         self.client = httpx.AsyncClient()
         self.app = Server("ankimcp-bridge")
-        
+
         # Register handlers
         self.app.list_tools()(self.list_tools)
         self.app.call_tool()(self.call_tool)
-    
-    async def list_tools(self) -> list[Tool]:
+
+    async def list_tools(self) -> "list[Tool]":
         """Forward tool listing request to Anki server."""
         try:
             response = await self.client.get(f"{self.base_url}/tools")
             response.raise_for_status()
             tools_data = response.json()
-            
+
             # Convert to Tool objects
             tools = []
             for tool_data in tools_data:
                 tools.append(Tool(**tool_data))
             return tools
-        except Exception as e:
+        except Exception:
             # Fallback to hardcoded tools if server is not running
             return [
                 Tool(
                     name="list_decks",
                     description="List all available Anki decks",
-                    inputSchema={"type": "object", "properties": {}, "required": []}
+                    inputSchema={"type": "object", "properties": {}, "required": []},
                 ),
                 Tool(
                     name="get_deck_info",
@@ -51,11 +50,11 @@ class AnkiMCPBridge:
                         "properties": {
                             "deck_name": {
                                 "type": "string",
-                                "description": "Name of the deck to get info for"
+                                "description": "Name of the deck to get info for",
                             }
                         },
-                        "required": ["deck_name"]
-                    }
+                        "required": ["deck_name"],
+                    },
                 ),
                 Tool(
                     name="search_notes",
@@ -65,16 +64,16 @@ class AnkiMCPBridge:
                         "properties": {
                             "query": {
                                 "type": "string",
-                                "description": "Anki search query"
+                                "description": "Anki search query",
                             },
                             "limit": {
                                 "type": "integer",
                                 "description": "Maximum number of results",
-                                "default": 50
-                            }
+                                "default": 50,
+                            },
                         },
-                        "required": ["query"]
-                    }
+                        "required": ["query"],
+                    },
                 ),
                 Tool(
                     name="get_note",
@@ -84,11 +83,11 @@ class AnkiMCPBridge:
                         "properties": {
                             "note_id": {
                                 "type": "integer",
-                                "description": "ID of the note to retrieve"
+                                "description": "ID of the note to retrieve",
                             }
                         },
-                        "required": ["note_id"]
-                    }
+                        "required": ["note_id"],
+                    },
                 ),
                 Tool(
                     name="get_cards_for_note",
@@ -98,11 +97,11 @@ class AnkiMCPBridge:
                         "properties": {
                             "note_id": {
                                 "type": "integer",
-                                "description": "ID of the note"
+                                "description": "ID of the note",
                             }
                         },
-                        "required": ["note_id"]
-                    }
+                        "required": ["note_id"],
+                    },
                 ),
                 Tool(
                     name="get_review_stats",
@@ -112,11 +111,11 @@ class AnkiMCPBridge:
                         "properties": {
                             "deck_name": {
                                 "type": "string",
-                                "description": "Name of the deck (optional)"
+                                "description": "Name of the deck (optional)",
                             }
                         },
-                        "required": []
-                    }
+                        "required": [],
+                    },
                 ),
                 Tool(
                     name="create_deck",
@@ -126,11 +125,11 @@ class AnkiMCPBridge:
                         "properties": {
                             "deck_name": {
                                 "type": "string",
-                                "description": "Name of the deck to create"
+                                "description": "Name of the deck to create",
                             }
                         },
-                        "required": ["deck_name"]
-                    }
+                        "required": ["deck_name"],
+                    },
                 ),
                 Tool(
                     name="create_note_type",
@@ -140,12 +139,12 @@ class AnkiMCPBridge:
                         "properties": {
                             "name": {
                                 "type": "string",
-                                "description": "Name of the note type"
+                                "description": "Name of the note type",
                             },
                             "fields": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "List of field names"
+                                "description": "List of field names",
                             },
                             "templates": {
                                 "type": "array",
@@ -154,14 +153,14 @@ class AnkiMCPBridge:
                                     "properties": {
                                         "name": {"type": "string"},
                                         "qfmt": {"type": "string"},
-                                        "afmt": {"type": "string"}
-                                    }
+                                        "afmt": {"type": "string"},
+                                    },
                                 },
-                                "description": "List of card templates"
-                            }
+                                "description": "List of card templates",
+                            },
                         },
-                        "required": ["name", "fields", "templates"]
-                    }
+                        "required": ["name", "fields", "templates"],
+                    },
                 ),
                 Tool(
                     name="create_note",
@@ -171,24 +170,24 @@ class AnkiMCPBridge:
                         "properties": {
                             "model_name": {
                                 "type": "string",
-                                "description": "Name of the note type (model)"
+                                "description": "Name of the note type (model)",
                             },
                             "fields": {
                                 "type": "object",
-                                "description": "Field name to value mapping"
+                                "description": "Field name to value mapping",
                             },
                             "deck_name": {
                                 "type": "string",
-                                "description": "Name of the deck to add the note to"
+                                "description": "Name of the deck to add the note to",
                             },
                             "tags": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "Optional list of tags"
-                            }
+                                "description": "Optional list of tags",
+                            },
                         },
-                        "required": ["model_name", "fields", "deck_name"]
-                    }
+                        "required": ["model_name", "fields", "deck_name"],
+                    },
                 ),
                 Tool(
                     name="update_note",
@@ -198,20 +197,20 @@ class AnkiMCPBridge:
                         "properties": {
                             "note_id": {
                                 "type": "integer",
-                                "description": "ID of the note to update"
+                                "description": "ID of the note to update",
                             },
                             "fields": {
                                 "type": "object",
-                                "description": "Field name to value mapping (only fields to update)"
+                                "description": "Field name to value mapping (only fields to update)",
                             },
                             "tags": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "New list of tags (replaces existing tags)"
-                            }
+                                "description": "New list of tags (replaces existing tags)",
+                            },
                         },
-                        "required": ["note_id"]
-                    }
+                        "required": ["note_id"],
+                    },
                 ),
                 Tool(
                     name="delete_note",
@@ -221,36 +220,39 @@ class AnkiMCPBridge:
                         "properties": {
                             "note_id": {
                                 "type": "integer",
-                                "description": "ID of the note to delete"
+                                "description": "ID of the note to delete",
                             }
                         },
-                        "required": ["note_id"]
-                    }
-                )
+                        "required": ["note_id"],
+                    },
+                ),
             ]
-    
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> list[TextContent]:
+
+    async def call_tool(
+        self, name: str, arguments: Dict[str, Any]
+    ) -> "list[TextContent]":
         """Forward tool execution to Anki server."""
         try:
             response = await self.client.post(
-                f"{self.base_url}/tools/{name}",
-                json=arguments
+                f"{self.base_url}/tools/{name}", json=arguments
             )
             response.raise_for_status()
             result = response.json()
             return [TextContent(type="text", text=json.dumps(result, indent=2))]
         except httpx.ConnectError:
-            return [TextContent(
-                type="text", 
-                text="Error: Cannot connect to Anki MCP server. Make sure Anki is running."
-            )]
+            return [
+                TextContent(
+                    type="text",
+                    text="Error: Cannot connect to Anki MCP server. Make sure Anki is running.",
+                )
+            ]
         except Exception as e:
             return [TextContent(type="text", text=f"Error: {str(e)}")]
-    
+
     async def run(self):
         """Run the bridge server."""
         from mcp.server.stdio import stdio_server
-        
+
         async with stdio_server() as (read_stream, write_stream):
             await self.app.run(
                 read_stream,
@@ -260,14 +262,14 @@ class AnkiMCPBridge:
                     server_version="0.1.0",
                     capabilities=self.app.get_capabilities(
                         notification_options=NotificationOptions(),
-                        experimental_capabilities={}
-                    )
-                )
+                        experimental_capabilities={},
+                    ),
+                ),
             )
-    
+
     async def __aenter__(self):
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()
 

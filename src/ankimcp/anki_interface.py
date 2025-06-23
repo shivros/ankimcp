@@ -6,7 +6,7 @@ try:
     # When running as an Anki addon
     from anki.cards import Card
     from anki.collection import Collection
-    from anki.notes import Note
+    from anki.notes import Note, NoteId
     from aqt import mw
 
     ANKI_AVAILABLE = True
@@ -18,6 +18,7 @@ except ImportError:
         Collection = Any
         Note = Any
         Card = Any
+        NoteId = int  # type: ignore
 
 
 class AnkiInterface:
@@ -181,8 +182,8 @@ class AnkiInterface:
     async def create_deck(self, deck_name: str) -> Dict[str, Any]:
         """Create a new deck."""
         deck_id = self.col.decks.id(deck_name)  # This creates if doesn't exist
-        deck = self.col.decks.get(deck_id)
-        
+        deck = self.col.decks.get(deck_id) if deck_id else None
+
         return {
             "id": deck_id,
             "name": deck_name,
@@ -191,32 +192,31 @@ class AnkiInterface:
         }
 
     async def create_note_type(
-        self, 
-        name: str, 
-        fields: List[str], 
-        templates: List[Dict[str, str]]
+        self, name: str, fields: List[str], templates: List[Dict[str, str]]
     ) -> Dict[str, Any]:
         """Create a new note type (model)."""
         models = self.col.models
-        
+
         # Create a new model
         model = models.new(name)
-        
+
         # Add fields
         for field_name in fields:
             field = models.new_field(field_name)
             models.add_field(model, field)
-        
+
         # Add templates (card types)
         for template in templates:
             t = models.new_template(template.get("name", "Card 1"))
             t["qfmt"] = template.get("qfmt", "{{" + fields[0] + "}}")
-            t["afmt"] = template.get("afmt", "{{FrontSide}}\n\n<hr id=answer>\n\n{{" + fields[-1] + "}}")
+            t["afmt"] = template.get(
+                "afmt", "{{FrontSide}}\n\n<hr id=answer>\n\n{{" + fields[-1] + "}}"
+            )
             models.add_template(model, t)
-        
+
         # Save the model
         models.save(model)
-        
+
         return {
             "id": model["id"],
             "name": model["name"],
@@ -226,77 +226,80 @@ class AnkiInterface:
         }
 
     async def create_note(
-        self, 
-        model_name: str, 
-        fields: Dict[str, str], 
+        self,
+        model_name: str,
+        fields: Dict[str, str],
         deck_name: str,
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Create a new note."""
         # Get model
         model_id = self.col.models.id_for_name(model_name)
         if not model_id:
             raise ValueError(f"Model not found: {model_name}")
-        
+
         model = self.col.models.get(model_id)
-        
+        if not model:
+            raise ValueError(f"Model not found: {model_name}")
+
         # Get deck
         deck_id = self.col.decks.id_for_name(deck_name)
         if not deck_id:
             raise ValueError(f"Deck not found: {deck_name}")
-        
+
         # Create note
         note = self.col.new_note(model)
-        
+
         # Set fields
         for field in model["flds"]:
             field_name = field["name"]
             if field_name in fields:
                 note[field_name] = fields[field_name]
-        
+
         # Set tags
         if tags:
             note.tags = tags
-        
+
         # Add to collection
         self.col.add_note(note, deck_id)
-        
+
         return await self._note_to_dict(note)
 
     async def update_note(
-        self, 
-        note_id: int, 
+        self,
+        note_id: int,
         fields: Optional[Dict[str, str]] = None,
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Update an existing note."""
-        note = self.col.get_note(note_id)
-        
+        note = self.col.get_note(NoteId(note_id))
+
         # Update fields
         if fields:
             model = note.note_type()
-            for field in model["flds"]:
-                field_name = field["name"]
-                if field_name in fields:
-                    note[field_name] = fields[field_name]
-        
+            if model:
+                for field in model["flds"]:
+                    field_name = field["name"]
+                    if field_name in fields:
+                        note[field_name] = fields[field_name]
+
         # Update tags
         if tags is not None:
             note.tags = tags
-        
+
         # Save changes
         self.col.update_note(note)
-        
+
         return await self._note_to_dict(note)
 
     async def delete_note(self, note_id: int) -> Dict[str, Any]:
         """Delete a note and all its cards."""
-        note = self.col.get_note(note_id)
+        note = self.col.get_note(NoteId(note_id))
         card_count = len(note.card_ids())
-        
+
         # Remove the note (this also removes all associated cards)
-        self.col.remove_notes([note_id])
-        
+        self.col.remove_notes([NoteId(note_id)])
+
         return {
             "note_id": note_id,
             "deleted": True,
