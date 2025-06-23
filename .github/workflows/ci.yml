@@ -11,53 +11,53 @@ jobs:
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install Rye
       uses: eifinger/setup-rye@v4
       with:
         enable-cache: true
         cache-prefix: 'ankimcp'
-        
+
     - name: Sync dependencies
       run: rye sync
-      
+
     - name: Check code formatting
       run: rye run format-check
-      
+
     - name: Run linting
       run: rye run lint
-      
+
     - name: Run type checking
       run: rye run typecheck
-      
+
     - name: Run tests
       run: rye run test
-      
+
     - name: Run all checks
       run: rye run check
 
   test-coverage:
     name: Test Coverage
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install Rye
       uses: eifinger/setup-rye@v4
       with:
         enable-cache: true
         cache-prefix: 'ankimcp'
-        
+
     - name: Sync dependencies
       run: rye sync
-      
+
     - name: Run tests with coverage
       run: rye run test-cov
-      
+
     - name: Upload coverage reports
       uses: codecov/codecov-action@v5
       env:
@@ -69,22 +69,22 @@ jobs:
   build:
     name: Build Package
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install Rye
       uses: eifinger/setup-rye@v4
       with:
         enable-cache: true
         cache-prefix: 'ankimcp'
-        
+
     - name: Sync dependencies
       run: rye sync
-      
+
     - name: Build distribution
       run: rye build
-      
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:

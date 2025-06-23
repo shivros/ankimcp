@@ -13,25 +13,25 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install Rye
       uses: eifinger/setup-rye@v4
       with:
         enable-cache: true
         cache-prefix: 'ankimcp'
-        
+
     - name: Sync dependencies
       run: rye sync
-      
+
     - name: Run quality checks
       run: rye run check
-      
+
     - name: Build distribution
       run: rye build
-      
+
     - name: Create Anki addon package
       run: |
         mkdir -p ankimcp-addon
@@ -45,7 +45,7 @@ jobs:
         cd ankimcp-addon
         zip -r ../ankimcp.ankiaddon *
         cd ..
-        
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
@@ -54,7 +54,7 @@ jobs:
           dist/*
           ankimcp.ankiaddon
         generate_release_notes: true
-        
+
     - name: Publish to PyPI
       if: startsWith(github.ref, 'refs/tags/')
       env:
