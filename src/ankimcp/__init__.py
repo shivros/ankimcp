@@ -41,8 +41,8 @@ def start_mcp_server():
         from .anki_interface import AnkiInterface
         from .simple_http_server import SimpleHTTPServer
 
-        # Create Anki interface
-        anki_interface = AnkiInterface(mw.col)
+        # Create Anki interface with permission configuration
+        anki_interface = AnkiInterface(mw.col, config)
 
         # Create and start HTTP server
         http_server = SimpleHTTPServer(anki_interface, host, port)

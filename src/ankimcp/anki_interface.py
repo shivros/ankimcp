@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from .permissions import PermissionAction, PermissionManager
+
 try:
     # When running as an Anki addon
     from anki.cards import Card
@@ -24,7 +26,11 @@ except ImportError:
 class AnkiInterface:
     """Interface for accessing Anki collection data."""
 
-    def __init__(self, collection: Optional["Collection"] = None):
+    def __init__(
+        self,
+        collection: Optional["Collection"] = None,
+        permission_config: Optional[Dict] = None,
+    ):
         """Initialize with a collection (uses mw.col if not provided)."""
         if collection:
             self.col = collection
@@ -32,6 +38,22 @@ class AnkiInterface:
             self.col = mw.col
         else:
             raise RuntimeError("No Anki collection available")
+
+        # Initialize permission manager
+        if permission_config:
+            self.permissions = PermissionManager(permission_config)
+        else:
+            # Default permissive configuration
+            self.permissions = PermissionManager(
+                {
+                    "permissions": {
+                        "global": {"read": True, "write": True, "delete": True},
+                        "mode": "denylist",
+                        "deck_permissions": {"allowlist": [], "denylist": []},
+                        "protected_decks": [],
+                    }
+                }
+            )
 
     async def list_decks(self) -> List[Dict[str, Any]]:
         """List all available decks."""
@@ -47,10 +69,14 @@ class AnkiInterface:
                         "is_filtered": deck.get("dyn", 0) != 0,
                     }
                 )
-        return decks
+        # Filter based on read permissions
+        return self.permissions.filter_decks(decks)
 
     async def get_deck_info(self, deck_name: str) -> Dict[str, Any]:
         """Get detailed information about a specific deck."""
+        # Check read permission
+        self.permissions.check_deck_permission(deck_name, PermissionAction.READ)
+
         deck_id = self.col.decks.id_for_name(deck_name)
         if not deck_id:
             raise ValueError(f"Deck not found: {deck_name}")
@@ -181,6 +207,9 @@ class AnkiInterface:
 
     async def create_deck(self, deck_name: str) -> Dict[str, Any]:
         """Create a new deck."""
+        # Check create permission
+        self.permissions.check_deck_permission(deck_name, PermissionAction.CREATE)
+
         deck_id = self.col.decks.id(deck_name)  # This creates if doesn't exist
         deck = self.col.decks.get(deck_id) if deck_id else None
 
@@ -233,6 +262,16 @@ class AnkiInterface:
         tags: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Create a new note."""
+        # Check deck write permission
+        self.permissions.check_deck_permission(deck_name, PermissionAction.WRITE)
+
+        # Check tag permissions if tags provided
+        if tags:
+            self.permissions.check_tag_permission(tags, PermissionAction.WRITE)
+
+        # Check note type permission
+        self.permissions.check_note_type_permission(model_name, PermissionAction.WRITE)
+
         # Get model
         model_id = self.col.models.id_for_name(model_name)
         if not model_id:
@@ -274,6 +313,13 @@ class AnkiInterface:
         """Update an existing note."""
         note = self.col.get_note(NoteId(note_id))
 
+        # Check current note's tags for permissions
+        self.permissions.check_tag_permission(note.tags, PermissionAction.WRITE)
+
+        # Check new tags if provided
+        if tags is not None:
+            self.permissions.check_tag_permission(tags, PermissionAction.WRITE)
+
         # Update fields
         if fields:
             model = note.note_type()
@@ -295,6 +341,16 @@ class AnkiInterface:
     async def delete_note(self, note_id: int) -> Dict[str, Any]:
         """Delete a note and all its cards."""
         note = self.col.get_note(NoteId(note_id))
+
+        # Check permission to delete based on tags
+        self.permissions.check_tag_permission(note.tags, PermissionAction.DELETE)
+
+        # Check deck permissions for all cards
+        for card_id in note.card_ids():
+            card = self.col.get_card(card_id)
+            deck_name = self.col.decks.name(card.did)
+            self.permissions.check_deck_permission(deck_name, PermissionAction.DELETE)
+
         card_count = len(note.card_ids())
 
         # Remove the note (this also removes all associated cards)

@@ -17,6 +17,9 @@ AnkiMCP is an Anki addon that exposes your Anki collection data (decks, notes, c
 - Get detailed information about specific notes and cards
 - View review statistics for decks or your entire collection
 - Access card scheduling information and review history
+- Create, update, and delete notes and decks
+- Comprehensive permission system to control AI access
+- Protect sensitive decks and notes from modification
 
 ## Installation
 
@@ -53,6 +56,24 @@ Once installed, the MCP server runs automatically when Anki is open. You can the
 - `get_note` - Get detailed information about a specific note
 - `get_cards_for_note` - Get all cards associated with a note
 - `get_review_stats` - Get review statistics for a deck or overall
+- `create_deck` - Create a new deck
+- `create_note_type` - Create a new note type (card template)
+- `create_note` - Create a new note in a deck
+- `update_note` - Update an existing note's fields or tags
+- `delete_note` - Delete a note and all its cards
+- `get_permissions` - View current permission settings
+
+## Permissions
+
+AnkiMCP includes a comprehensive permission system to control AI access to your collection. You can:
+
+- Set global read/write/delete permissions
+- Use allowlists or denylists for deck access
+- Protect specific decks from modification
+- Restrict access based on note tags
+- Control which note types can be created
+
+See [PERMISSIONS.md](PERMISSIONS.md) for detailed configuration options.
 
 ## Configuration
 
@@ -61,7 +82,19 @@ Edit the addon configuration in Anki (Tools → Add-ons → AnkiMCP → Config):
 ```json
 {
     "host": "localhost",
-    "port": 4473
+    "port": 4473,
+    "permissions": {
+        "global": {
+            "read": true,
+            "write": true,
+            "delete": false
+        },
+        "mode": "denylist",
+        "deck_permissions": {
+            "denylist": ["Personal::*"]
+        },
+        "protected_decks": ["Default"]
+    }
 }
 ```
 

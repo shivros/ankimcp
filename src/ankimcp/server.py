@@ -22,6 +22,11 @@ async def list_tools() -> List[Tool]:
     """List available tools for interacting with Anki."""
     return [
         Tool(
+            name="get_permissions",
+            description="Get current permission settings and status",
+            inputSchema={"type": "object", "properties": {}, "required": []},
+        ),
+        Tool(
             name="list_decks",
             description="List all available Anki decks",
             inputSchema={"type": "object", "properties": {}, "required": []},
@@ -98,6 +103,116 @@ async def list_tools() -> List[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="create_deck",
+            description="Create a new deck",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "deck_name": {
+                        "type": "string",
+                        "description": "Name of the deck to create",
+                    }
+                },
+                "required": ["deck_name"],
+            },
+        ),
+        Tool(
+            name="create_note_type",
+            description="Create a new note type (model)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the note type",
+                    },
+                    "fields": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of field names",
+                    },
+                    "templates": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "qfmt": {"type": "string"},
+                                "afmt": {"type": "string"},
+                            },
+                            "required": ["name", "qfmt", "afmt"],
+                        },
+                        "description": "List of card templates",
+                    },
+                },
+                "required": ["name", "fields", "templates"],
+            },
+        ),
+        Tool(
+            name="create_note",
+            description="Create a new note",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "description": "Name of the note type (model)",
+                    },
+                    "fields": {
+                        "type": "object",
+                        "description": "Field name to value mapping",
+                    },
+                    "deck_name": {
+                        "type": "string",
+                        "description": "Name of the deck to add the note to",
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional list of tags",
+                    },
+                },
+                "required": ["model_name", "fields", "deck_name"],
+            },
+        ),
+        Tool(
+            name="update_note",
+            description="Update an existing note",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "note_id": {
+                        "type": "integer",
+                        "description": "ID of the note to update",
+                    },
+                    "fields": {
+                        "type": "object",
+                        "description": "Field name to value mapping (only fields to update)",
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "New list of tags (replaces existing tags)",
+                    },
+                },
+                "required": ["note_id"],
+            },
+        ),
+        Tool(
+            name="delete_note",
+            description="Delete a note and all its cards",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "note_id": {
+                        "type": "integer",
+                        "description": "ID of the note to delete",
+                    }
+                },
+                "required": ["note_id"],
+            },
+        ),
     ]
 
 
@@ -108,7 +223,11 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         return [TextContent(type="text", text="Error: Anki interface not initialized")]
 
     try:
-        if name == "list_decks":
+        if name == "get_permissions":
+            permissions = anki.permissions.get_permission_summary()
+            return [TextContent(type="text", text=str(permissions))]
+
+        elif name == "list_decks":
             decks = await anki.list_decks()
             return [TextContent(type="text", text=str(decks))]
 
@@ -133,6 +252,37 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         elif name == "get_review_stats":
             stats = await anki.get_review_stats(arguments.get("deck_name"))
             return [TextContent(type="text", text=str(stats))]
+
+        elif name == "create_deck":
+            result = await anki.create_deck(arguments["deck_name"])
+            return [TextContent(type="text", text=str(result))]
+
+        elif name == "create_note_type":
+            result = await anki.create_note_type(
+                arguments["name"], arguments["fields"], arguments["templates"]
+            )
+            return [TextContent(type="text", text=str(result))]
+
+        elif name == "create_note":
+            result = await anki.create_note(
+                arguments["model_name"],
+                arguments["fields"],
+                arguments["deck_name"],
+                arguments.get("tags"),
+            )
+            return [TextContent(type="text", text=str(result))]
+
+        elif name == "update_note":
+            result = await anki.update_note(
+                arguments["note_id"],
+                arguments.get("fields"),
+                arguments.get("tags"),
+            )
+            return [TextContent(type="text", text=str(result))]
+
+        elif name == "delete_note":
+            result = await anki.delete_note(arguments["note_id"])
+            return [TextContent(type="text", text=str(result))]
 
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]

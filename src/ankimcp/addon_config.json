@@ -1,4 +1,28 @@
 {
   "host": "localhost",
-  "port": 4473
+  "port": 4473,
+  "permissions": {
+    "global": {
+      "read": true,
+      "write": true,
+      "delete": true
+    },
+    "mode": "allowlist",
+    "deck_permissions": {
+      "allowlist": [],
+      "denylist": []
+    },
+    "protected_decks": [
+      "Default"
+    ],
+    "tag_restrictions": {
+      "protected_tags": [],
+      "readonly_tags": []
+    },
+    "note_type_permissions": {
+      "allow_create": true,
+      "allow_modify": false,
+      "allowed_types": []
+    }
+  }
 }

@@ -11,17 +11,23 @@ async def test_list_tools():
     tools = await list_tools()
 
     # Check we have the expected number of tools
-    assert len(tools) == 6
+    assert len(tools) == 12
 
     # Check tool names
     tool_names = {tool.name for tool in tools}
     expected_names = {
+        "get_permissions",
         "list_decks",
         "get_deck_info",
         "search_notes",
         "get_note",
         "get_cards_for_note",
         "get_review_stats",
+        "create_deck",
+        "create_note_type",
+        "create_note",
+        "update_note",
+        "delete_note",
     }
     assert tool_names == expected_names
 

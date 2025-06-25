@@ -18,6 +18,20 @@ class MockAnkiInterface(AnkiInterface):
 
     def __init__(self):
         # Don't call super().__init__() since we don't have a collection
+        # Initialize with permissive config for testing
+        from .permissions import PermissionManager
+
+        self.permissions = PermissionManager(
+            {
+                "permissions": {
+                    "global": {"read": True, "write": True, "delete": True},
+                    "mode": "denylist",
+                    "deck_permissions": {"allowlist": [], "denylist": []},
+                    "protected_decks": [],
+                }
+            }
+        )
+
         self.decks = {
             1: {"id": 1, "name": "Default", "card_count": 10, "is_filtered": False},
             2: {"id": 2, "name": "Spanish", "card_count": 50, "is_filtered": False},
@@ -50,9 +64,15 @@ class MockAnkiInterface(AnkiInterface):
         self.next_model_id = 2
 
     async def list_decks(self):
-        return list(self.decks.values())
+        # Apply permission filtering
+        return self.permissions.filter_decks(list(self.decks.values()))
 
     async def get_deck_info(self, deck_name: str):
+        # Check read permission
+        from .permissions import PermissionAction
+
+        self.permissions.check_deck_permission(deck_name, PermissionAction.READ)
+
         for deck in self.decks.values():
             if deck["name"] == deck_name:
                 return {
@@ -76,9 +96,15 @@ class MockAnkiInterface(AnkiInterface):
                 if tag_query in note["tags"]:
                     results.append(note)
             else:
-                # Simple text search in fields
+                # Check if query matches any tag or field content
+                query_lower = query.lower()
+                # Check tags
+                if any(query_lower in tag.lower() for tag in note["tags"]):
+                    results.append(note)
+                    continue
+                # Check fields
                 for value in note["fields"].values():
-                    if query.lower() in str(value).lower():
+                    if query_lower in str(value).lower():
                         results.append(note)
                         break
         return results[:limit]
@@ -118,6 +144,11 @@ class MockAnkiInterface(AnkiInterface):
         }
 
     async def create_deck(self, deck_name: str):
+        # Check create permission
+        from .permissions import PermissionAction
+
+        self.permissions.check_deck_permission(deck_name, PermissionAction.CREATE)
+
         # Check if deck already exists
         for deck in self.decks.values():
             if deck["name"] == deck_name:
@@ -147,6 +178,11 @@ class MockAnkiInterface(AnkiInterface):
         }
 
     async def create_note_type(self, name: str, fields: list, templates: list):
+        # Check permission
+        from .permissions import PermissionAction
+
+        self.permissions.check_note_type_permission(name, PermissionAction.CREATE)
+
         # Check if model already exists
         if name in self.models:
             raise ValueError(f"Model already exists: {name}")
@@ -174,6 +210,14 @@ class MockAnkiInterface(AnkiInterface):
     async def create_note(
         self, model_name: str, fields: dict, deck_name: str, tags: Optional[list] = None
     ):
+        # Check permissions
+        from .permissions import PermissionAction
+
+        self.permissions.check_deck_permission(deck_name, PermissionAction.WRITE)
+        if tags:
+            self.permissions.check_tag_permission(tags, PermissionAction.WRITE)
+        self.permissions.check_note_type_permission(model_name, PermissionAction.WRITE)
+
         # Check model exists
         if model_name not in self.models:
             raise ValueError(f"Model not found: {model_name}")
@@ -213,6 +257,21 @@ class MockAnkiInterface(AnkiInterface):
 
         note = self.notes[note_id]
 
+        # Check permissions
+        from .permissions import PermissionAction
+
+        # Check global write permission first (through deck permission)
+        # For simplicity, assume the note is in the first deck
+        if self.decks:
+            first_deck = list(self.decks.values())[0]
+            self.permissions.check_deck_permission(
+                first_deck["name"], PermissionAction.WRITE
+            )
+
+        self.permissions.check_tag_permission(note["tags"], PermissionAction.WRITE)
+        if tags is not None:
+            self.permissions.check_tag_permission(tags, PermissionAction.WRITE)
+
         # Update fields
         if fields:
             note["fields"].update(fields)
@@ -228,6 +287,19 @@ class MockAnkiInterface(AnkiInterface):
             raise ValueError(f"Note not found: {note_id}")
 
         note = self.notes[note_id]
+
+        # Check permissions
+        from .permissions import PermissionAction
+
+        self.permissions.check_tag_permission(note["tags"], PermissionAction.DELETE)
+
+        # For simplicity, assume the note is in the first deck for permission check
+        if self.decks:
+            first_deck = list(self.decks.values())[0]
+            self.permissions.check_deck_permission(
+                first_deck["name"], PermissionAction.DELETE
+            )
+
         card_count = note["card_count"]
 
         # Remove note
