@@ -3,9 +3,9 @@
 import pytest
 
 import ankimcp.server
-from ankimcp.__main__ import MockAnkiInterface
 from ankimcp.permissions import PermissionManager
 from ankimcp.server import call_tool
+from tests.test_utils import MockAnkiInterface
 
 
 class TestServerPermissions:

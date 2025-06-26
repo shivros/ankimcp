@@ -2,8 +2,8 @@
 
 import pytest
 
-from ankimcp.__main__ import MockAnkiInterface
 from ankimcp.permissions import PermissionError, PermissionManager
+from tests.test_utils import MockAnkiInterface
 
 
 class TestAnkiInterfacePermissions:

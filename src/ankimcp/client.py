@@ -10,6 +10,8 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from mcp.types import TextContent, Tool
 
+from .tools import AVAILABLE_TOOLS
+
 app = Server("ankimcp-client")
 
 # Global HTTP client
@@ -38,49 +40,17 @@ async def list_tools() -> List[Tool]:
         return tools
 
     except (httpx.ConnectError, httpx.HTTPError):
-        # Return fallback tools if server is not running
-        return [
-            Tool(
-                name="list_decks",
-                description="List all available Anki decks (Anki must be running)",
-                inputSchema={"type": "object", "properties": {}, "required": []},
-            ),
-            Tool(
-                name="get_deck_info",
-                description="Get detailed information about a specific deck",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "deck_name": {
-                            "type": "string",
-                            "description": "Name of the deck",
-                        }
-                    },
-                    "required": ["deck_name"],
-                },
-            ),
-            Tool(
-                name="search_notes",
-                description="Search for notes using Anki's search syntax",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string", "description": "Anki search query"},
-                        "limit": {
-                            "type": "integer",
-                            "description": "Maximum results",
-                            "default": 50,
-                        },
-                    },
-                    "required": ["query"],
-                },
-            ),
+        # Return all available tools even if server is not running
+        # Add a status check tool
+        tools = AVAILABLE_TOOLS.copy()
+        tools.append(
             Tool(
                 name="anki_status",
                 description="Check if Anki server is running",
                 inputSchema={"type": "object", "properties": {}, "required": []},
-            ),
-        ]
+            )
+        )
+        return tools
 
 
 @app.call_tool()

@@ -2,7 +2,7 @@
 
 import pytest
 
-from ankimcp.__main__ import MockAnkiInterface
+from tests.test_utils import MockAnkiInterface
 
 
 @pytest.fixture
