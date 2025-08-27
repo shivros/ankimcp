@@ -14,24 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@v4
         with:
-          python-version: '3.12'
+          enable-cache: true
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.lock
+      - name: Rye dependencies
+        run: rye sync
 
-      - name: Formatting check
-        run: black --check src tests
+      - name: Formatting
+        run: rye run format-check
 
       - name: Linting
-        run: ruff check src tests
+        run: rye run lint
 
-      - name: Type checking
-        run: pyright src
+      - name: Pyright linting
+        run: rye run typecheck
 
       - name: Run tests
-        run: pytest
+        run: rye run test
