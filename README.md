@@ -30,6 +30,20 @@ AnkiMCP is an Anki addon that exposes your Anki collection data (decks, notes, c
 3. Restart Anki
 4. The MCP server will start automatically when you open your profile
 
+### Packaging for AnkiWeb
+
+Use the helper script to generate a distributable `.ankiaddon` archive that
+matches the [AnkiWeb sharing requirements](https://addon-docs.ankiweb.net/sharing.html):
+
+```bash
+python package_for_ankiweb.py --version 1.0.0
+```
+
+The resulting file is written to the `dist/` directory (e.g.
+`dist/ankimcp-1.0.0-YYYYmmdd-HHMMSS.ankiaddon`). The script reads metadata from
+`src/ankimcp/manifest.json` and filters out common build artifacts so the
+archive is ready to upload to AnkiWeb.
+
 ### Development Setup
 
 ```bash
