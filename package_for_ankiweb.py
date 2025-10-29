@@ -121,7 +121,9 @@ def main() -> None:
     source = args.source.resolve()
 
     if not source.exists() or not source.is_dir():
-        raise NotADirectoryError(f"Source directory {source} does not exist or is not a directory.")
+        raise NotADirectoryError(
+            f"Source directory {source} does not exist or is not a directory."
+        )
 
     manifest = load_manifest(source)
     package_name = manifest.get("package") or manifest.get("name") or source.name
