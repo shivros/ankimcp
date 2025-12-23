@@ -11,6 +11,7 @@ Simply run the provided install script:
 This will automatically:
 - Find your Anki addons directory
 - Copy the addon files
+- Vendor the `mcp` runtime dependency into `vendor/`
 - Create the necessary configuration
 
 ## Method 2: Manual Installation
@@ -30,7 +31,12 @@ This will automatically:
    cp -r src/ankimcp/* [ANKI_ADDONS_DIR]/ankimcp/
    ```
 
-4. **Create meta.json:**
+4. **Install runtime dependencies into the addon folder:**
+   ```bash
+   python -m pip install --upgrade --target [ANKI_ADDONS_DIR]/ankimcp/vendor "mcp>=1.9.4"
+   ```
+
+5. **Create meta.json:**
    Create a file `[ANKI_ADDONS_DIR]/ankimcp/meta.json` with:
    ```json
    {

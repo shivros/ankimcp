@@ -10,15 +10,22 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import os
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Iterator
 from zipfile import ZIP_DEFLATED, ZipFile
 
 DEFAULT_SOURCE = Path("src") / "ankimcp"
 EXCLUDE_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
 EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".pyd", ".so", ".dylib"}
 EXCLUDE_NAMES = {".DS_Store", "Thumbs.db"}
+RUNTIME_DEPENDENCIES = ["mcp>=1.9.4"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,6 +53,11 @@ def parse_args() -> argparse.Namespace:
         "--no-timestamp",
         action="store_true",
         help="Omit the timestamp from the generated filename when --output is not provided.",
+    )
+    parser.add_argument(
+        "--skip-deps",
+        action="store_true",
+        help="Skip bundling runtime dependencies (useful if the source already includes them).",
     )
     return parser.parse_args()
 
@@ -116,6 +128,58 @@ def create_archive(source: Path, destination: Path) -> None:
             archive.write(file_path, file_path.relative_to(source))
 
 
+def copy_source_tree(source: Path, destination: Path) -> Path:
+    target = destination / source.name
+    shutil.copytree(source, target)
+    return target
+
+
+def install_runtime_dependencies(target_dir: Path, packages: Iterable[str]) -> None:
+    """Install required runtime dependencies into the target directory."""
+    with tempfile.TemporaryDirectory() as venv_dir:
+        subprocess.run(
+            [sys.executable, "-m", "venv", venv_dir], check=True, capture_output=True
+        )
+        python_bin = (
+            Path(venv_dir) / ("Scripts" if os.name == "nt" else "bin") / "python"
+        )
+
+        cmd = [
+            str(python_bin),
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "--target",
+            str(target_dir),
+            *packages,
+        ]
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f"Failed to install dependencies into {target_dir}: {exc.stderr or exc.stdout}"
+            ) from exc
+
+
+@contextmanager
+def build_staging_source(
+    source: Path, include_dependencies: bool = True
+) -> Iterator[Path]:
+    """Yield a temporary copy of the source with optional vendored dependencies."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        staging_root = Path(temp_dir)
+        staging_source = copy_source_tree(source, staging_root)
+
+        if include_dependencies:
+            vendor_dir = staging_source / "vendor"
+            vendor_dir.mkdir(parents=True, exist_ok=True)
+            install_runtime_dependencies(vendor_dir, RUNTIME_DEPENDENCIES)
+
+        yield staging_source
+
+
 def main() -> None:
     args = parse_args()
     source = args.source.resolve()
@@ -135,9 +199,15 @@ def main() -> None:
         include_timestamp=not args.no_timestamp,
     )
 
-    create_archive(source, output_path)
+    with build_staging_source(
+        source=source, include_dependencies=not args.skip_deps
+    ) as staging_source:
+        create_archive(staging_source, output_path)
 
-    print(f"Packaged add-on from {source} -> {output_path}")
+    print(
+        f"Packaged add-on from {source} -> {output_path}"
+        f"{' (skipped vendored deps)' if args.skip_deps else ''}"
+    )
 
 
 if __name__ == "__main__":

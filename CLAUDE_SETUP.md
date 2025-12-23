@@ -22,16 +22,16 @@ Edit the `claude_desktop_config.json` file and add the AnkiMCP server configurat
         "-m",
         "ankimcp"
       ],
-      "cwd": "/home/matt/Workspaces/matt-fff/ankimcp",
+      "cwd": "/home/shiv/Workspaces/matt-fff/ankimcp",
       "env": {
-        "PYTHONPATH": "/home/matt/Workspaces/matt-fff/ankimcp/src"
+        "PYTHONPATH": "/home/shiv/Workspaces/matt-fff/ankimcp/src"
       }
     }
   }
 }
 ```
 
-**Important**: Replace `/home/matt/Workspaces/matt-fff/ankimcp` with the actual path to your ankimcp directory.
+**Important**: Replace `/home/shiv/Workspaces/matt-fff/ankimcp` with the actual path to your ankimcp directory.
 
 ## Step 3: Make sure dependencies are available
 

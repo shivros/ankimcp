@@ -34,6 +34,27 @@ mkdir -p "$ANKIMCP_DIR"
 echo "Copying addon files..."
 cp -r src/ankimcp/* "$ANKIMCP_DIR/"
 
+# Install vendored runtime dependencies
+PYTHON_BIN="$(command -v python3 || command -v python)"
+if [ -z "$PYTHON_BIN" ]; then
+    echo "Error: Python interpreter not found. Please install Python 3.10+."
+    exit 1
+fi
+
+if ! "$PYTHON_BIN" -m pip --version >/dev/null 2>&1; then
+    echo "pip not found; attempting to bootstrap with ensurepip..."
+    if ! "$PYTHON_BIN" -m ensurepip --upgrade >/dev/null 2>&1; then
+        echo "Error: pip is required to install dependencies."
+        exit 1
+    fi
+fi
+
+echo "Installing runtime dependencies into $ANKIMCP_DIR/vendor..."
+if ! "$PYTHON_BIN" -m pip install --upgrade --target "$ANKIMCP_DIR/vendor" "mcp>=1.9.4"; then
+    echo "Error: Failed to install runtime dependencies."
+    exit 1
+fi
+
 # Create meta.json for Anki
 cat > "$ANKIMCP_DIR/meta.json" << EOF
 {

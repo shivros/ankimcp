@@ -26,7 +26,8 @@ AnkiMCP is an Anki addon that exposes your Anki collection data (decks, notes, c
 ### As an Anki Addon
 
 1. Download the addon from AnkiWeb or clone this repository
-2. Copy the `src/ankimcp` folder to your Anki addons directory
+2. Copy the `src/ankimcp` folder to your Anki addons directory (or run
+   `./install_addon.sh` to copy files and vendor the `mcp` dependency)
 3. Restart Anki
 4. The MCP server will start automatically when you open your profile
 
@@ -41,8 +42,10 @@ python package_for_ankiweb.py --version 1.0.0
 
 The resulting file is written to the `dist/` directory (e.g.
 `dist/ankimcp-1.0.0-YYYYmmdd-HHMMSS.ankiaddon`). The script reads metadata from
-`src/ankimcp/manifest.json` and filters out common build artifacts so the
-archive is ready to upload to AnkiWeb.
+`src/ankimcp/manifest.json`, vendors the `mcp` runtime dependency into
+`vendor/`, and filters out common build artifacts so the archive is ready to
+upload to AnkiWeb. Use `--skip-deps` if you are packaging an already vendored
+source tree.
 
 ### Development Setup
 
@@ -111,6 +114,11 @@ Edit the addon configuration in Anki (Tools → Add-ons → AnkiMCP → Config):
     }
 }
 ```
+
+## Testing & Acceptance
+
+- Run `rye run test` to exercise the automated suite.
+- COD-73 acceptance: packaged add-on bundles the `mcp` runtime dependency (via `package_for_ankiweb.py` or `install_addon.sh`) and the automated tests pass.
 
 ## More Information
 
