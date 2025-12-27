@@ -1,23 +1,26 @@
 """Tool definitions for AnkiMCP."""
 
-from mcp.types import Tool
+# NOTE: We use plain dictionaries instead of mcp.types.Tool because the mcp package
+# is not available in Anki's Python environment when the addon is installed via AnkiWeb.
+# Each tool dictionary has three keys: "name", "description", and "inputSchema".
+# The server.py and client.py files (used only during development) still use the MCP SDK.
 
 # Define all available tools in one place
 AVAILABLE_TOOLS = [
-    Tool(
-        name="get_permissions",
-        description="Get current permission settings and status",
-        inputSchema={"type": "object", "properties": {}, "required": []},
-    ),
-    Tool(
-        name="list_decks",
-        description="List all available Anki decks",
-        inputSchema={"type": "object", "properties": {}, "required": []},
-    ),
-    Tool(
-        name="get_deck_info",
-        description="Get detailed information about a specific deck",
-        inputSchema={
+    {
+        "name": "get_permissions",
+        "description": "Get current permission settings and status",
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "list_decks",
+        "description": "List all available Anki decks",
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_deck_info",
+        "description": "Get detailed information about a specific deck",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "deck_name": {
@@ -27,11 +30,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["deck_name"],
         },
-    ),
-    Tool(
-        name="search_notes",
-        description="Search for notes using Anki's search syntax",
-        inputSchema={
+    },
+    {
+        "name": "search_notes",
+        "description": "Search for notes using Anki's search syntax",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "query": {
@@ -46,11 +49,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["query"],
         },
-    ),
-    Tool(
-        name="get_note",
-        description="Get detailed information about a specific note",
-        inputSchema={
+    },
+    {
+        "name": "get_note",
+        "description": "Get detailed information about a specific note",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "note_id": {
@@ -60,22 +63,22 @@ AVAILABLE_TOOLS = [
             },
             "required": ["note_id"],
         },
-    ),
-    Tool(
-        name="get_cards_for_note",
-        description="Get all cards associated with a specific note",
-        inputSchema={
+    },
+    {
+        "name": "get_cards_for_note",
+        "description": "Get all cards associated with a specific note",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "note_id": {"type": "integer", "description": "ID of the note"}
             },
             "required": ["note_id"],
         },
-    ),
-    Tool(
-        name="get_review_stats",
-        description="Get review statistics for a deck or overall",
-        inputSchema={
+    },
+    {
+        "name": "get_review_stats",
+        "description": "Get review statistics for a deck or overall",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "deck_name": {
@@ -85,11 +88,11 @@ AVAILABLE_TOOLS = [
             },
             "required": [],
         },
-    ),
-    Tool(
-        name="create_deck",
-        description="Create a new deck",
-        inputSchema={
+    },
+    {
+        "name": "create_deck",
+        "description": "Create a new deck",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "deck_name": {
@@ -99,11 +102,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["deck_name"],
         },
-    ),
-    Tool(
-        name="create_note_type",
-        description="Create a new note type (model)",
-        inputSchema={
+    },
+    {
+        "name": "create_note_type",
+        "description": "Create a new note type (model)",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "name": {
@@ -131,11 +134,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["name", "fields", "templates"],
         },
-    ),
-    Tool(
-        name="create_note",
-        description="Create a new note",
-        inputSchema={
+    },
+    {
+        "name": "create_note",
+        "description": "Create a new note",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "model_name": {
@@ -158,11 +161,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["model_name", "fields", "deck_name"],
         },
-    ),
-    Tool(
-        name="update_note",
-        description="Update an existing note",
-        inputSchema={
+    },
+    {
+        "name": "update_note",
+        "description": "Update an existing note",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "note_id": {
@@ -181,11 +184,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["note_id"],
         },
-    ),
-    Tool(
-        name="delete_note",
-        description="Delete a note and all its cards",
-        inputSchema={
+    },
+    {
+        "name": "delete_note",
+        "description": "Delete a note and all its cards",
+        "inputSchema": {
             "type": "object",
             "properties": {
                 "note_id": {
@@ -195,17 +198,11 @@ AVAILABLE_TOOLS = [
             },
             "required": ["note_id"],
         },
-    ),
+    },
 ]
 
 
 def get_tool_schemas():
     """Get tool schemas for HTTP responses."""
-    return [
-        {
-            "name": tool.name,
-            "description": tool.description,
-            "inputSchema": tool.inputSchema,
-        }
-        for tool in AVAILABLE_TOOLS
-    ]
+    # Tools are already dictionaries with the correct structure
+    return AVAILABLE_TOOLS

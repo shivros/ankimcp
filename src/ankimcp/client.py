@@ -42,7 +42,7 @@ async def list_tools() -> List[Tool]:
     except (httpx.ConnectError, httpx.HTTPError):
         # Return all available tools even if server is not running
         # Add a status check tool
-        tools = AVAILABLE_TOOLS.copy()
+        tools = [Tool(**tool) for tool in AVAILABLE_TOOLS]
         tools.append(
             Tool(
                 name="anki_status",

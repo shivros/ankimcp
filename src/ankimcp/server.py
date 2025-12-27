@@ -21,7 +21,7 @@ anki: Optional[AnkiInterface] = None
 @app.list_tools()
 async def list_tools() -> List[Tool]:
     """List available tools for interacting with Anki."""
-    return AVAILABLE_TOOLS
+    return [Tool(**tool) for tool in AVAILABLE_TOOLS]
 
 
 @app.call_tool()
