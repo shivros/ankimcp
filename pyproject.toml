@@ -50,6 +50,8 @@ format = "black src/ tests/"
 format-check = "black --check src/ tests/"
 # Run all checks
 check = { chain = ["format-check", "lint", "typecheck", "test"] }
+# Repository quality suite
+quality = { chain = ["check"] }
 
 [tool.hatch.metadata]
 allow-direct-references = true
