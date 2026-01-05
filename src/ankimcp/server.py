@@ -61,6 +61,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             stats = await anki.get_review_stats(arguments.get("deck_name"))
             return [TextContent(type="text", text=str(stats))]
 
+        elif name == "list_note_types":
+            note_types = await anki.list_note_types()
+            return [TextContent(type="text", text=str(note_types))]
+
         elif name == "create_deck":
             result = await anki.create_deck(arguments["deck_name"])
             return [TextContent(type="text", text=str(result))]
@@ -90,6 +94,18 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
         elif name == "delete_note":
             result = await anki.delete_note(arguments["note_id"])
+            return [TextContent(type="text", text=str(result))]
+
+        elif name == "delete_deck":
+            result = await anki.delete_deck(arguments["deck_name"])
+            return [TextContent(type="text", text=str(result))]
+
+        elif name == "update_deck":
+            result = await anki.update_deck(
+                arguments["deck_name"],
+                arguments.get("new_name"),
+                arguments.get("description"),
+            )
             return [TextContent(type="text", text=str(result))]
 
         else:

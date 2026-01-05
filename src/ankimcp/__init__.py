@@ -1,6 +1,7 @@
 """AnkiMCP - Expose Anki data via Model Context Protocol."""
 
 import logging
+import os
 import subprocess
 import sys
 import threading
@@ -25,6 +26,7 @@ def _add_vendor_site_packages():
         vendor_path = str(vendor_dir)
         if vendor_path not in sys.path:
             sys.path.insert(0, vendor_path)
+            logger.debug(f"Added vendor path to sys.path: {vendor_path}")
 
 
 _add_vendor_site_packages()
@@ -43,10 +45,12 @@ def start_mcp_server():
             logger.error("Anki collection not available")
             return
 
-        # Read configuration
+        # Read configuration (addon config takes priority, then env vars, then defaults)
         config = mw.addonManager.getConfig(__name__)
-        host = config.get("host", "localhost") if config else "localhost"
-        port = config.get("port", 4473) if config else 4473
+        default_host = os.environ.get("ANKIMCP_HOST", "localhost")
+        default_port = int(os.environ.get("ANKIMCP_PORT", "4473"))
+        host = config.get("host", default_host) if config else default_host
+        port = config.get("port", default_port) if config else default_port
 
         # Start the server process
         addon_dir = Path(__file__).parent
@@ -69,11 +73,10 @@ def start_mcp_server():
             setattr(mw.addonManager, "_ankimcp_server", http_server)
 
         logger.info(f"MCP server started on {host}:{port}")
-        showInfo(f"AnkiMCP server started on {host}:{port}")
 
-    except ImportError:
-        # Not running as Anki addon
-        logger.error("This must be run as an Anki addon")
+    except ImportError as e:
+        # Log the actual import error for debugging
+        logger.error(f"Import error while starting MCP server: {e}")
     except Exception as e:
         logger.error(f"Failed to start MCP server: {e}")
         if "showInfo" in locals():

@@ -118,18 +118,32 @@ class PermissionManager:
     ) -> None:
         """Check if an action is allowed for a note type.
 
+        Actions:
+            READ: Using an existing note type (e.g., creating notes with it)
+            CREATE: Creating new note type definitions
+            WRITE: Modifying note type definitions
+
         Raises:
             PermissionError: If the action is not allowed
         """
         if action == PermissionAction.CREATE:
             if not self.note_type_permissions.get("allow_create", True):
-                raise PermissionError("Creating new note types is not allowed")
+                raise PermissionError(
+                    "Creating new note types is not allowed. "
+                    "Set 'allow_create': true in note_type_permissions config to enable."
+                )
 
         elif action == PermissionAction.WRITE:
             if not self.note_type_permissions.get("allow_modify", True):
-                raise PermissionError("Modifying note types is not allowed")
+                raise PermissionError(
+                    "Modifying note types is not allowed. "
+                    "Set 'allow_modify': true in note_type_permissions config to enable."
+                )
 
-        # Check allowed types restriction
+        # For READ action (using a note type), only check allowed_types restriction
+        # No special permission flags needed - just verify it's in allowed list if set
+
+        # Check allowed types restriction (applies to all actions)
         allowed_types = self.note_type_permissions.get("allowed_types", [])
         if allowed_types and note_type not in allowed_types:
             raise PermissionError(

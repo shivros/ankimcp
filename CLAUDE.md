@@ -69,7 +69,8 @@ src/ankimcp/
 ├── __main__.py          # Standalone test server with mock data
 ├── server.py            # MCP server implementation
 ├── anki_interface.py    # Abstraction layer for Anki operations
-├── addon_config.json    # Anki addon configuration
+├── config.json          # Anki addon default configuration
+├── config.md            # Configuration documentation (shown in Anki)
 └── manifest.json        # Anki addon metadata
 ```
 
