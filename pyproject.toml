@@ -1,6 +1,6 @@
 [project]
 name = "ankimcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Expose Anki data via Model Context Protocol (MCP)"
 authors = [
     { name = "Siobhan Rossi", email = "siobhan@fastmail.org" }
