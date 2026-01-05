@@ -7,7 +7,7 @@
       "write": true,
       "delete": true
     },
-    "mode": "allowlist",
+    "mode": "denylist",
     "deck_permissions": {
       "allowlist": [],
       "denylist": []

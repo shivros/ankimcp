@@ -1,77 +1,92 @@
 # Setting up AnkiMCP with Claude Code
 
-AnkiMCP works by running an HTTP server inside Anki, and Claude Code connects to it via a client that translates between MCP stdio and HTTP.
+AnkiMCP is an Anki addon that exposes your Anki data via the Model Context Protocol (MCP). When Anki is running, it provides an HTTP server with SSE transport that MCP clients can connect to directly.
 
-## Step 1: Find your Claude Code configuration file
+## Step 1: Install the Anki addon
 
-The configuration file is located at:
+1. Copy the `ankimcp` folder to your Anki addons directory:
+   - **macOS**: `~/Library/Application Support/Anki2/addons21/`
+   - **Linux**: `~/.local/share/Anki2/addons21/`
+   - **Windows**: `%APPDATA%\Anki2\addons21\`
+
+2. Restart Anki and open your profile
+3. The MCP server starts automatically on `localhost:4473`
+
+## Step 2: Configure your MCP client
+
+AnkiMCP exposes an SSE endpoint that MCP clients can connect to directly.
+
+### For Claude Desktop
+
+Edit `claude_desktop_config.json`:
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Linux**: `~/.config/claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-## Step 2: Add AnkiMCP to the configuration
-
-Edit the `claude_desktop_config.json` file and add the AnkiMCP server configuration:
 
 ```json
 {
   "mcpServers": {
     "ankimcp": {
-      "command": "python",
-      "args": [
-        "-m",
-        "ankimcp"
-      ],
-      "cwd": "/home/matt/Workspaces/matt-fff/ankimcp",
-      "env": {
-        "PYTHONPATH": "/home/matt/Workspaces/matt-fff/ankimcp/src"
-      }
+      "url": "http://localhost:4473/sse"
     }
   }
 }
 ```
 
-**Important**: Replace `/home/matt/Workspaces/matt-fff/ankimcp` with the actual path to your ankimcp directory.
+### For other MCP clients
 
-## Step 3: Make sure dependencies are available
+Point the client to the SSE endpoint: `http://localhost:4473/sse`
 
-Install the package dependencies:
+## Step 3: Restart your MCP client
+
+1. Completely quit the client (not just close the window)
+2. Start the client again
+3. Make sure Anki is running with your profile open
+
+## Available Endpoints
+
+When Anki is running:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/sse` | GET | SSE transport (MCP standard) |
+| `/messages?session_id=X` | POST | Send messages to SSE session |
+| `/mcp` | POST | Direct JSON-RPC (stateless) |
+| `/health` | GET | Health check |
+
+## Testing the Connection
+
+You can test if the server is running:
 
 ```bash
-cd /path/to/ankimcp
-rye sync
+# Health check
+curl http://localhost:4473/health
+
+# List tools via direct JSON-RPC
+curl -X POST http://localhost:4473/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
-
-## Step 4: Restart Claude Code
-
-After editing the configuration:
-1. Completely quit Claude Code (not just close the window)
-2. Start Claude Code again
-3. You should see AnkiMCP in the MCP servers list
-
-## Step 5: Make sure Anki is running
-
-1. Start Anki
-2. Open your profile
-3. You should see a notification that the AnkiMCP server started
-4. The server runs on `localhost:4473`
-
-## Step 6: Test the connection
-
-In Claude Code, you can test if the connection is working:
-- Ask: "Check if Anki is running" (uses the `anki_status` tool)
-- Ask: "List my Anki decks"
-- Ask: "Search for notes in my Anki collection"
 
 ## How it works
 
 1. **Anki addon** runs an HTTP server on port 4473 when Anki is open
-2. **Claude Code** runs the AnkiMCP client via stdio
-3. **The client** translates MCP commands to HTTP requests to the Anki server
-4. This allows Claude to access your real Anki data while Anki is running
+2. **MCP clients** connect directly to the SSE endpoint
+3. The server speaks native MCP protocol (JSON-RPC 2.0 over SSE)
+
+## Configuration
+
+The addon can be configured via Anki's addon config (Tools → Add-ons → AnkiMCP → Config):
+
+- `host`: Server host (default: "localhost")
+- `port`: Server port (default: 4473)
+
+Or via environment variables:
+- `ANKIMCP_HOST`
+- `ANKIMCP_PORT`
 
 ## Troubleshooting
 
-- **"Cannot connect to Anki"**: Make sure Anki is running and you've opened a profile
-- **Tools not showing**: Restart Claude Code completely
-- **Server not starting**: Check the Anki addon (Tools → Add-ons → View Files) for errors
+- **"Cannot connect"**: Make sure Anki is running and you've opened a profile
+- **Tools not showing**: Restart your MCP client completely
+- **Port conflict**: Change the port in addon config

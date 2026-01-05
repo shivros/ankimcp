@@ -205,6 +205,24 @@ class AnkiInterface:
             "last_review": getattr(card, "last_review", 0),
         }
 
+    async def list_note_types(self) -> List[Dict[str, Any]]:
+        """List all available note types (models)."""
+        note_types = []
+        for model in self.col.models.all():
+            fields = [f["name"] for f in model.get("flds", [])]
+            templates = [t["name"] for t in model.get("tmpls", [])]
+            note_types.append(
+                {
+                    "id": model["id"],
+                    "name": model["name"],
+                    "fields": fields,
+                    "templates": templates,
+                    "field_count": len(fields),
+                    "template_count": len(templates),
+                }
+            )
+        return note_types
+
     async def create_deck(self, deck_name: str) -> Dict[str, Any]:
         """Create a new deck."""
         # Check create permission
@@ -269,8 +287,8 @@ class AnkiInterface:
         if tags:
             self.permissions.check_tag_permission(tags, PermissionAction.WRITE)
 
-        # Check note type permission
-        self.permissions.check_note_type_permission(model_name, PermissionAction.WRITE)
+        # Check note type permission (READ = allowed to use this note type)
+        self.permissions.check_note_type_permission(model_name, PermissionAction.READ)
 
         # Get model
         model_id = self.col.models.id_for_name(model_name)
@@ -360,4 +378,74 @@ class AnkiInterface:
             "note_id": note_id,
             "deleted": True,
             "cards_deleted": card_count,
+        }
+
+    async def delete_deck(self, deck_name: str) -> Dict[str, Any]:
+        """Delete a deck and all its cards."""
+        # Check permission to delete this deck
+        self.permissions.check_deck_permission(deck_name, PermissionAction.DELETE)
+
+        # Get deck ID
+        deck_id = self.col.decks.id_for_name(deck_name)
+        if not deck_id:
+            raise ValueError(f"Deck not found: {deck_name}")
+
+        # Get card count before deletion
+        card_count = self.col.decks.card_count(deck_id, include_subdecks=False)
+
+        # Remove the deck (this also removes all cards in the deck)
+        self.col.decks.remove([deck_id])
+
+        return {
+            "deck_name": deck_name,
+            "deleted": True,
+            "cards_deleted": card_count,
+        }
+
+    async def update_deck(
+        self,
+        deck_name: str,
+        new_name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Update a deck's properties (name and/or description)."""
+        # Check permission to write to this deck
+        self.permissions.check_deck_permission(deck_name, PermissionAction.WRITE)
+
+        # If renaming, also check permission for the new name
+        if new_name is not None:
+            self.permissions.check_deck_permission(new_name, PermissionAction.WRITE)
+
+        # Get deck ID
+        deck_id = self.col.decks.id_for_name(deck_name)
+        if not deck_id:
+            raise ValueError(f"Deck not found: {deck_name}")
+
+        # Get the deck
+        deck = self.col.decks.get(deck_id)
+        if not deck:
+            raise ValueError(f"Deck not found: {deck_name}")
+
+        updated_fields = []
+        result_name = deck_name
+
+        # Update name if provided
+        if new_name is not None:
+            deck["name"] = new_name
+            updated_fields.append("name")
+            result_name = new_name
+
+        # Update description if provided
+        if description is not None:
+            deck["desc"] = description
+            updated_fields.append("description")
+
+        # Save changes
+        self.col.decks.save(deck)
+
+        return {
+            "deck_name": result_name,
+            "deck_id": deck_id,
+            "updated": True,
+            "updated_fields": updated_fields,
         }

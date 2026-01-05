@@ -26,7 +26,8 @@ AnkiMCP is an Anki addon that exposes your Anki collection data (decks, notes, c
 ### As an Anki Addon
 
 1. Download the addon from AnkiWeb or clone this repository
-2. Copy the `src/ankimcp` folder to your Anki addons directory
+2. Copy the `src/ankimcp` folder to your Anki addons directory (or run
+   `./install_addon.sh` to copy files and vendor the `mcp` dependency)
 3. Restart Anki
 4. The MCP server will start automatically when you open your profile
 
@@ -41,8 +42,10 @@ python package_for_ankiweb.py --version 1.0.0
 
 The resulting file is written to the `dist/` directory (e.g.
 `dist/ankimcp-1.0.0-YYYYmmdd-HHMMSS.ankiaddon`). The script reads metadata from
-`src/ankimcp/manifest.json` and filters out common build artifacts so the
-archive is ready to upload to AnkiWeb.
+`src/ankimcp/manifest.json`, vendors the `mcp` runtime dependency into
+`vendor/`, and filters out common build artifacts so the archive is ready to
+upload to AnkiWeb. Use `--skip-deps` if you are packaging an already vendored
+source tree.
 
 ### Development Setup
 
@@ -70,11 +73,14 @@ Once installed, the MCP server runs automatically when Anki is open. You can the
 - `get_note` - Get detailed information about a specific note
 - `get_cards_for_note` - Get all cards associated with a note
 - `get_review_stats` - Get review statistics for a deck or overall
+- `list_note_types` - List all note types with their fields and templates
 - `create_deck` - Create a new deck
 - `create_note_type` - Create a new note type (card template)
 - `create_note` - Create a new note in a deck
 - `update_note` - Update an existing note's fields or tags
+- `update_deck` - Update a deck's name or description
 - `delete_note` - Delete a note and all its cards
+- `delete_deck` - Delete a deck and all its cards
 - `get_permissions` - View current permission settings
 
 ## Permissions
@@ -111,6 +117,11 @@ Edit the addon configuration in Anki (Tools → Add-ons → AnkiMCP → Config):
     }
 }
 ```
+
+## Testing & Acceptance
+
+- Run `rye run test` to exercise the automated suite.
+- COD-73 acceptance: packaged add-on bundles the `mcp` runtime dependency (via `package_for_ankiweb.py` or `install_addon.sh`) and the automated tests pass.
 
 ## More Information
 

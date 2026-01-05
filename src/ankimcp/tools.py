@@ -87,6 +87,11 @@ AVAILABLE_TOOLS = [
         },
     ),
     Tool(
+        name="list_note_types",
+        description="List all available note types (models) with their fields and templates",
+        inputSchema={"type": "object", "properties": {}, "required": []},
+    ),
+    Tool(
         name="create_deck",
         description="Create a new deck",
         inputSchema={
@@ -194,6 +199,42 @@ AVAILABLE_TOOLS = [
                 }
             },
             "required": ["note_id"],
+        },
+    ),
+    Tool(
+        name="delete_deck",
+        description="Delete a deck and all its cards. Cannot delete protected decks.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "deck_name": {
+                    "type": "string",
+                    "description": "Name of the deck to delete",
+                }
+            },
+            "required": ["deck_name"],
+        },
+    ),
+    Tool(
+        name="update_deck",
+        description="Update a deck's properties (name, description). Cannot update protected decks.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "deck_name": {
+                    "type": "string",
+                    "description": "Current name of the deck to update",
+                },
+                "new_name": {
+                    "type": "string",
+                    "description": "New name for the deck (optional)",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "New description for the deck (optional)",
+                },
+            },
+            "required": ["deck_name"],
         },
     ),
 ]

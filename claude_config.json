@@ -4,7 +4,7 @@
       "command": "python",
       "args": ["-m", "ankimcp"],
       "env": {
-        "PYTHONPATH": "/home/matt/Workspaces/matt-fff/ankimcp/src"
+        "PYTHONPATH": "/home/shiv/Workspaces/matt-fff/ankimcp/src"
       }
     }
   }
