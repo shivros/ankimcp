@@ -81,7 +81,10 @@ Once installed, configure your AI assistant to use the MCP server at:
 - **Port**: 4473 (default)
 
 The server provides tools for:
-- Listing decks
-- Searching notes
-- Getting card details
+- Listing and managing decks (list, create, update, delete)
+- Searching and managing notes (search, create, update, delete)
+- Getting card and note details
 - Viewing review statistics
+- Managing permissions
+
+See the README for the full list of available tools.

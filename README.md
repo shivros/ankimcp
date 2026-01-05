@@ -73,11 +73,14 @@ Once installed, the MCP server runs automatically when Anki is open. You can the
 - `get_note` - Get detailed information about a specific note
 - `get_cards_for_note` - Get all cards associated with a note
 - `get_review_stats` - Get review statistics for a deck or overall
+- `list_note_types` - List all note types with their fields and templates
 - `create_deck` - Create a new deck
 - `create_note_type` - Create a new note type (card template)
 - `create_note` - Create a new note in a deck
 - `update_note` - Update an existing note's fields or tags
+- `update_deck` - Update a deck's name or description
 - `delete_note` - Delete a note and all its cards
+- `delete_deck` - Delete a deck and all its cards
 - `get_permissions` - View current permission settings
 
 ## Permissions

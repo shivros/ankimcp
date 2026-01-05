@@ -66,9 +66,12 @@ rye run mypy src/
 ```
 src/ankimcp/
 ├── __init__.py          # Anki addon entry point with hooks
-├── __main__.py          # Standalone test server with mock data
-├── server.py            # MCP server implementation
+├── __main__.py          # Standalone usage info
+├── server.py            # MCP server implementation (SDK-based)
+├── simple_http_server.py # HTTP server with SSE transport (runs in Anki)
 ├── anki_interface.py    # Abstraction layer for Anki operations
+├── tools.py             # MCP tool definitions
+├── permissions.py       # Permission management system
 ├── config.json          # Anki addon default configuration
 ├── config.md            # Configuration documentation (shown in Anki)
 └── manifest.json        # Anki addon metadata
@@ -98,12 +101,24 @@ The addon follows a layered architecture:
 
 ## Available MCP Tools
 
+**Read operations:**
 - `list_decks`: Returns all decks with card counts
 - `get_deck_info`: Detailed deck statistics
 - `search_notes`: Search using Anki's query syntax
 - `get_note`: Full note data with fields
 - `get_cards_for_note`: All cards for a specific note
 - `get_review_stats`: Review statistics for deck or collection
+- `list_note_types`: All note types with fields and templates
+- `get_permissions`: Current permission settings
+
+**Write operations:**
+- `create_deck`: Create a new deck
+- `create_note_type`: Create a new note type
+- `create_note`: Create a new note
+- `update_note`: Update note fields or tags
+- `update_deck`: Update deck name or description
+- `delete_note`: Delete a note and its cards
+- `delete_deck`: Delete a deck and its cards
 
 ## Installation as Anki Addon
 
@@ -114,7 +129,9 @@ To install in Anki:
 
 ## Key Implementation Details
 
-- Server runs as subprocess to avoid blocking Anki UI
-- Uses stdio for MCP communication
+- HTTP server with SSE transport runs on port 4473 (configurable)
+- Threaded server handles concurrent SSE connections
+- MCP clients connect directly via SSE endpoint (`/sse`)
 - Gracefully handles Anki availability (addon vs standalone)
 - Configuration via Anki's addon config system
+- Comprehensive permission system for access control
