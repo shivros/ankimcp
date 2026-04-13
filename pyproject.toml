@@ -6,7 +6,7 @@ authors = [
     { name = "Siobhan Rossi", email = "siobhan@fastmail.org" }
 ]
 dependencies = [
-    "anki>=25.2.7",
+    "anki>=25.9.2",
     "aqt>=25.2.7",
 ]
 readme = "README.md"
