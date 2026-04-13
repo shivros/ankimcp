@@ -7,7 +7,7 @@ authors = [
 ]
 dependencies = [
     "anki>=25.2.7",
-    "aqt>=25.2.7",
+    "aqt>=25.9.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
